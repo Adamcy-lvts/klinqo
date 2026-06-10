@@ -51,6 +51,28 @@ class UserFactory extends Factory
     }
 
     /**
+     * Indicate that the user is a platform admin.
+     */
+    public function admin(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'role' => 'admin',
+            'is_verified' => true,
+        ]);
+    }
+
+    /**
+     * Indicate that the user is a business owner.
+     */
+    public function businessOwner(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'role' => 'business_owner',
+            'is_verified' => true,
+        ]);
+    }
+
+    /**
      * Indicate that the model has two-factor authentication configured.
      */
     public function withTwoFactor(): static

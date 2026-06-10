@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Hash;
 
 class DatabaseSeeder extends Seeder
 {
@@ -15,12 +16,24 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
-
-        User::factory()->create([
-            'name' => 'Test User',
-            'phone' => '+2348012345678',
-            'email' => 'test@example.com',
+        $this->call([
+            PlatformSettingsSeeder::class,
+            CuisineSeeder::class,
+            AdminSeeder::class,
+            MirasDelightSeeder::class,
         ]);
+
+        // Demo customer for local testing.
+        User::query()->updateOrCreate(
+            ['phone' => '+2348012345678'],
+            [
+                'name' => 'Test Customer',
+                'email' => 'test@example.com',
+                'email_verified_at' => now(),
+                'password' => Hash::make('password'),
+                'role' => 'customer',
+                'is_verified' => true,
+            ],
+        );
     }
 }
