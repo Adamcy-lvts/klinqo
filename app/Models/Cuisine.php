@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\DiscoveryCache;
 use Carbon\CarbonImmutable;
 use Database\Factories\CuisineFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -23,6 +24,12 @@ class Cuisine extends Model
 {
     /** @use HasFactory<CuisineFactory> */
     use HasFactory, HasUuids;
+
+    protected static function booted(): void
+    {
+        static::saved(fn () => DiscoveryCache::forgetCuisines());
+        static::deleted(fn () => DiscoveryCache::forgetCuisines());
+    }
 
     /**
      * @return BelongsToMany<Business, $this, BusinessCuisine>

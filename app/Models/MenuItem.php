@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\DiscoveryCache;
 use Carbon\CarbonImmutable;
 use Database\Factories\MenuItemFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -34,6 +35,12 @@ class MenuItem extends Model
 {
     /** @use HasFactory<MenuItemFactory> */
     use HasFactory, HasUuids;
+
+    protected static function booted(): void
+    {
+        static::saved(fn (MenuItem $item) => DiscoveryCache::forgetMenu($item->business_id));
+        static::deleted(fn (MenuItem $item) => DiscoveryCache::forgetMenu($item->business_id));
+    }
 
     protected function casts(): array
     {

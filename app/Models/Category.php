@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\DiscoveryCache;
 use Carbon\CarbonImmutable;
 use Database\Factories\CategoryFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -28,6 +29,12 @@ class Category extends Model
 {
     /** @use HasFactory<CategoryFactory> */
     use HasFactory, HasUuids;
+
+    protected static function booted(): void
+    {
+        static::saved(fn (Category $category) => DiscoveryCache::forgetMenu($category->business_id));
+        static::deleted(fn (Category $category) => DiscoveryCache::forgetMenu($category->business_id));
+    }
 
     protected function casts(): array
     {
