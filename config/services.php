@@ -35,4 +35,11 @@ return [
         ],
     ],
 
+    'termii' => [
+        'key' => env('TERMII_API_KEY'),
+        'sender_id' => env('TERMII_SENDER_ID', 'Klinqo'),
+        'base_url' => env('TERMII_BASE_URL', 'https://api.ng.termii.com'),
+        'channel' => env('TERMII_CHANNEL', 'generic'),
+    ],
+
 ];
