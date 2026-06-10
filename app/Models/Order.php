@@ -45,6 +45,35 @@ class Order extends Model
     /** @use HasFactory<OrderFactory> */
     use HasFactory, HasUuids;
 
+    public const STATUS_PLACED = 'placed';
+
+    public const STATUS_CONFIRMED = 'confirmed';
+
+    public const STATUS_PREPARING = 'preparing';
+
+    public const STATUS_READY = 'ready';
+
+    public const STATUS_DELIVERING = 'delivering';
+
+    public const STATUS_DELIVERED = 'delivered';
+
+    public const STATUS_CANCELLED = 'cancelled';
+
+    /**
+     * Legal forward transitions for the order status machine.
+     *
+     * @var array<string, list<string>>
+     */
+    public const TRANSITIONS = [
+        self::STATUS_PLACED => [self::STATUS_CONFIRMED, self::STATUS_CANCELLED],
+        self::STATUS_CONFIRMED => [self::STATUS_PREPARING, self::STATUS_CANCELLED],
+        self::STATUS_PREPARING => [self::STATUS_READY, self::STATUS_CANCELLED],
+        self::STATUS_READY => [self::STATUS_DELIVERING, self::STATUS_DELIVERED, self::STATUS_CANCELLED],
+        self::STATUS_DELIVERING => [self::STATUS_DELIVERED],
+        self::STATUS_DELIVERED => [],
+        self::STATUS_CANCELLED => [],
+    ];
+
     protected function casts(): array
     {
         return [
@@ -75,14 +104,31 @@ class Order extends Model
      */
     public static function generateOrderNumber(): string
     {
+        $prefix = (string) config('klinqo.order_number_prefix', 'KLQ');
         $next = static::query()->count() + 1;
 
         do {
-            $candidate = 'KLQ-'.str_pad((string) $next, 4, '0', STR_PAD_LEFT);
+            $candidate = $prefix.'-'.str_pad((string) $next, 4, '0', STR_PAD_LEFT);
             $next++;
         } while (static::query()->where('order_number', $candidate)->exists());
 
         return $candidate;
+    }
+
+    /**
+     * Whether the order status may legally advance to $status.
+     */
+    public function canTransitionTo(string $status): bool
+    {
+        return in_array($status, self::TRANSITIONS[$this->status] ?? [], true);
+    }
+
+    /**
+     * Whether the customer may still cancel (only before preparation starts).
+     */
+    public function isCancellable(): bool
+    {
+        return in_array($this->status, [self::STATUS_PLACED, self::STATUS_CONFIRMED], true);
     }
 
     /**
@@ -131,5 +177,13 @@ class Order extends Model
     public function review(): HasOne
     {
         return $this->hasOne(Review::class);
+    }
+
+    /**
+     * @return HasMany<CommissionLedgerEntry, $this>
+     */
+    public function commissionLedgerEntries(): HasMany
+    {
+        return $this->hasMany(CommissionLedgerEntry::class);
     }
 }

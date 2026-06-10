@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\AddressController;
 use App\Http\Controllers\Api\Auth\OtpController;
 use App\Http\Controllers\Api\Auth\PasswordResetController;
 use App\Http\Controllers\Api\Auth\RegisterController;
@@ -7,6 +8,9 @@ use App\Http\Controllers\Api\Auth\SessionController;
 use App\Http\Controllers\Api\CuisineController;
 use App\Http\Controllers\Api\KitchenController;
 use App\Http\Controllers\Api\MenuItemController;
+use App\Http\Controllers\Api\OrderController;
+use App\Http\Controllers\Api\PaymentController;
+use App\Http\Controllers\Api\PaystackWebhookController;
 use App\Http\Controllers\Api\SearchController;
 use Illuminate\Support\Facades\Route;
 
@@ -39,9 +43,26 @@ Route::get('kitchens/{kitchen}/menu', [KitchenController::class, 'menu']);
 Route::get('menu-items/{menuItem}', [MenuItemController::class, 'show']);
 
 /*
-| Membership (authenticated).
+| Payments webhook (public; verified by signature).
+*/
+Route::post('webhooks/paystack', [PaystackWebhookController::class, 'handle']);
+
+/*
+| Membership, orders, payments, addresses (authenticated).
 */
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('kitchens/{kitchen}/join', [KitchenController::class, 'join']);
     Route::get('me/kitchens', [KitchenController::class, 'myKitchens']);
+
+    Route::get('orders', [OrderController::class, 'index']);
+    Route::post('orders', [OrderController::class, 'store']);
+    Route::get('orders/{order}', [OrderController::class, 'show']);
+    Route::get('orders/{order}/track', [OrderController::class, 'track']);
+    Route::post('orders/{order}/cancel', [OrderController::class, 'cancel']);
+    Route::post('orders/{order}/status', [OrderController::class, 'updateStatus']);
+
+    Route::post('payments/initialize', [PaymentController::class, 'initialize']);
+    Route::post('payments/{reference}/verify', [PaymentController::class, 'verify']);
+
+    Route::apiResource('addresses', AddressController::class)->except('show');
 });

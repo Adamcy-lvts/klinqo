@@ -35,6 +35,8 @@ class PlatformSetting extends Model
      */
     public static function current(): self
     {
-        return static::query()->firstOrCreate([]);
+        return static::query()->firstOrCreate([], [
+            'default_commission_percent' => config('klinqo.default_commission_percent', 15),
+        ]);
     }
 }
