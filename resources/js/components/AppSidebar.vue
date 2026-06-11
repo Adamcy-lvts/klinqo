@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3';
-import { BookOpen, FolderGit2, LayoutGrid } from '@lucide/vue';
+import { BarChart3, BookOpen, FolderGit2, LayoutGrid, Receipt, Settings, Truck, Users, UtensilsCrossed } from '@lucide/vue';
 import AppLogo from '@/components/AppLogo.vue';
 import NavFooter from '@/components/NavFooter.vue';
 import NavMain from '@/components/NavMain.vue';
@@ -22,6 +22,36 @@ const mainNavItems: NavItem[] = [
         title: 'Dashboard',
         href: dashboard(),
         icon: LayoutGrid,
+    },
+    {
+        title: 'Orders',
+        href: '/orders',
+        icon: Receipt,
+    },
+    {
+        title: 'Menu',
+        href: '/menu',
+        icon: UtensilsCrossed,
+    },
+    {
+        title: 'Delivery methods',
+        href: '/delivery-methods',
+        icon: Truck,
+    },
+    {
+        title: 'Customers',
+        href: '/customers',
+        icon: Users,
+    },
+    {
+        title: 'Reports',
+        href: '/reports',
+        icon: BarChart3,
+    },
+    {
+        title: 'Settings',
+        href: '/business/settings',
+        icon: Settings,
     },
 ];
 

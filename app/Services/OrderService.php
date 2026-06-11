@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Events\OrderPlaced;
 use App\Events\OrderStatusChanged;
 use App\Exceptions\InvalidOrderTransitionException;
 use App\Models\Address;
@@ -48,7 +49,7 @@ class OrderService
         $commissionPercent = $kitchen->effectiveCommissionPercent();
         $commissionAmount = round($subtotal * $commissionPercent / 100, 2);
 
-        return DB::transaction(function () use (
+        $order = DB::transaction(function () use (
             $user, $kitchen, $deliveryType, $paymentMethod, $deliveryMethodId, $addressId,
             $lines, $subtotal, $deliveryFee, $total, $commissionPercent, $commissionAmount, $data
         ) {
@@ -84,6 +85,10 @@ class OrderService
 
             return $order->load('items');
         });
+
+        event(new OrderPlaced($order));
+
+        return $order;
     }
 
     /**

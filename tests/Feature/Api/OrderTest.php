@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Api;
 
+use App\Events\OrderPlaced;
 use App\Events\OrderStatusChanged;
 use App\Models\Address;
 use App\Models\Business;
@@ -147,6 +148,23 @@ class OrderTest extends TestCase
             'payment_method' => 'online',
             'items' => [['menu_item_id' => $item->id, 'quantity' => 1]],
         ])->assertStatus(422)->assertJsonValidationErrors('payment_method');
+    }
+
+    public function test_placing_an_order_broadcasts_order_placed(): void
+    {
+        Event::fake([OrderPlaced::class]);
+
+        [$kitchen, $item] = $this->makeKitchen();
+        Sanctum::actingAs(User::factory()->create());
+
+        $this->postJson('/api/orders', [
+            'business_id' => $kitchen->id,
+            'delivery_type' => 'pickup',
+            'payment_method' => 'pay_on_pickup',
+            'items' => [['menu_item_id' => $item->id, 'quantity' => 1]],
+        ])->assertCreated();
+
+        Event::assertDispatched(OrderPlaced::class);
     }
 
     public function test_online_order_has_no_cash_accrual(): void
