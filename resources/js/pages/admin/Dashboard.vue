@@ -7,6 +7,7 @@ interface BusinessSummary {
     name: string;
     status: string;
     business_code: string;
+    storefront_url: string;
 }
 
 interface Metrics {
@@ -51,6 +52,21 @@ const naira = (value: string | number) =>
                 <p class="text-sm text-muted-foreground">
                     Code {{ business.business_code }} · {{ business.status }}
                 </p>
+            </div>
+
+            <div class="flex flex-col gap-4 rounded-xl border border-sidebar-border/70 p-4 sm:flex-row sm:items-center dark:border-sidebar-border">
+                <img
+                    :src="`https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(business.storefront_url)}`"
+                    alt="Storefront QR code"
+                    class="h-32 w-32 rounded-lg bg-white p-1"
+                />
+                <div class="min-w-0">
+                    <p class="font-medium">Your storefront</p>
+                    <p class="text-sm text-muted-foreground">Share this link or print the QR for your counter.</p>
+                    <a :href="business.storefront_url" target="_blank" class="mt-1 block truncate text-sm text-primary underline">
+                        {{ business.storefront_url }}
+                    </a>
+                </div>
             </div>
 
             <div v-if="metrics" class="grid auto-rows-min gap-4 md:grid-cols-4">

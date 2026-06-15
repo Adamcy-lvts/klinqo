@@ -15,7 +15,7 @@ class PaystackService
      *
      * @return array{authorization_url: ?string, access_code: ?string, reference: string}
      */
-    public function initialize(Order $order): array
+    public function initialize(Order $order, ?string $callbackUrl = null): array
     {
         $reference = $this->reference($order);
 
@@ -28,6 +28,10 @@ class PaystackService
                 'order_number' => $order->order_number,
             ],
         ];
+
+        if ($callbackUrl !== null) {
+            $payload['callback_url'] = $callbackUrl;
+        }
 
         if (! empty($order->business->paystack_subaccount_code)) {
             $payload['subaccount'] = $order->business->paystack_subaccount_code;

@@ -24,6 +24,7 @@ class DashboardController extends Controller
                 'name' => $business->name,
                 'status' => $business->status,
                 'business_code' => $business->business_code,
+                'storefront_url' => route('storefront.show', $business->business_code),
             ],
             'metrics' => $business === null ? null : $this->metrics($business),
             'recentOrders' => $business === null ? [] : $this->recentOrders($business),
