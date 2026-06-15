@@ -18,7 +18,7 @@ class MirasDelightSeeder extends Seeder
         $owner = User::query()->updateOrCreate(
             ['phone' => '+2348011112222'],
             [
-                'name' => 'Mira Okafor',
+                'name' => 'Samira Mohammed',
                 'email' => 'mira@klinqo.test',
                 'email_verified_at' => now(),
                 'password' => Hash::make('password'),

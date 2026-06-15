@@ -33,3 +33,6 @@ Route::get('storefront/payment/callback', [StorefrontOrderController::class, 'pa
 Route::get('s/{code}/orders/{order}', [StorefrontOrderController::class, 'track'])
     ->middleware('auth')
     ->name('storefront.order.track');
+Route::post('s/{code}/orders/{order}/review', [StorefrontOrderController::class, 'review'])
+    ->middleware('auth')
+    ->name('storefront.order.review');

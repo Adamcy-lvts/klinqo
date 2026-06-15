@@ -9,6 +9,7 @@ use App\Http\Controllers\Admin\MenuController;
 use App\Http\Controllers\Admin\MenuItemController;
 use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Admin\ReportController;
+use App\Http\Controllers\Admin\ReviewController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -54,4 +55,8 @@ Route::middleware(['auth', 'verified', 'kitchen'])->group(function () {
     // Reports
     Route::get('reports', [ReportController::class, 'index'])->name('reports.index');
     Route::get('reports/export', [ReportController::class, 'export'])->name('reports.export');
+
+    // Reviews
+    Route::get('reviews', [ReviewController::class, 'index'])->name('reviews.index');
+    Route::patch('reviews/{review}/hidden', [ReviewController::class, 'toggleHidden'])->name('reviews.toggle');
 });

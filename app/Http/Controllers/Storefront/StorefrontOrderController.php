@@ -3,9 +3,11 @@
 namespace App\Http\Controllers\Storefront;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\StoreReviewRequest;
 use App\Models\Order;
 use App\Services\OrderService;
 use App\Services\PaystackService;
+use App\Services\ReviewService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -16,6 +18,7 @@ class StorefrontOrderController extends Controller
     public function __construct(
         private readonly OrderService $orders,
         private readonly PaystackService $paystack,
+        private readonly ReviewService $reviews,
     ) {}
 
     /**
@@ -25,12 +28,30 @@ class StorefrontOrderController extends Controller
     {
         abort_unless($order->user_id === $request->user()->id, 403);
 
-        $order->load(['items', 'business:id,name,business_code', 'deliveryMethod', 'address']);
+        $order->load(['items', 'business:id,name,business_code', 'deliveryMethod', 'address', 'review']);
 
         return Inertia::render('storefront/OrderTracking', [
             'order' => $order,
             'steps' => $this->steps($order),
+            'canReview' => $order->status === Order::STATUS_DELIVERED && $order->review === null,
         ]);
+    }
+
+    /**
+     * Submit a review for a delivered order from the tracking page.
+     */
+    public function review(StoreReviewRequest $request, string $code, Order $order): RedirectResponse
+    {
+        abort_unless($order->user_id === $request->user()->id, 403);
+
+        $this->reviews->submit(
+            $order,
+            $request->user(),
+            (int) $request->integer('rating'),
+            $request->input('text'),
+        );
+
+        return back();
     }
 
     /**

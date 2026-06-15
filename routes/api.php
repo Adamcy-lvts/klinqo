@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\MenuItemController;
 use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\PaystackWebhookController;
+use App\Http\Controllers\Api\ReviewController;
 use App\Http\Controllers\Api\SearchController;
 use Illuminate\Support\Facades\Route;
 
@@ -42,6 +43,8 @@ Route::get('kitchens/{kitchen}/menu', [KitchenController::class, 'menu']);
 
 Route::get('menu-items/{menuItem}', [MenuItemController::class, 'show']);
 
+Route::get('kitchens/{kitchen}/reviews', [ReviewController::class, 'index']);
+
 /*
 | Payments webhook (public; verified by signature).
 */
@@ -60,6 +63,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('orders/{order}/track', [OrderController::class, 'track']);
     Route::post('orders/{order}/cancel', [OrderController::class, 'cancel']);
     Route::post('orders/{order}/status', [OrderController::class, 'updateStatus']);
+    Route::post('orders/{order}/review', [ReviewController::class, 'store']);
 
     Route::post('payments/initialize', [PaymentController::class, 'initialize']);
     Route::post('payments/{reference}/verify', [PaymentController::class, 'verify']);

@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { Head, router } from '@inertiajs/vue3';
-import { onMounted, onUnmounted } from 'vue';
+import { Head, router, useForm } from '@inertiajs/vue3';
+import { onMounted, onUnmounted, ref } from 'vue';
 
 interface OrderItem { id: string; name: string; quantity: number; total_price: string | number }
 interface Order {
@@ -20,7 +20,15 @@ interface Order {
 const props = defineProps<{
     order: Order;
     steps: Array<{ status: string; reached: boolean; current: boolean }>;
+    canReview: boolean;
 }>();
+
+const reviewForm = useForm({ rating: 5, text: '' });
+
+const submitReview = () =>
+    reviewForm.post(`/s/${props.order.business?.business_code}/orders/${props.order.id}/review`, {
+        preserveScroll: true,
+    });
 
 const naira = (v: string | number) => new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN' }).format(Number(v));
 
@@ -60,6 +68,25 @@ onUnmounted(() => {
                     <span class="capitalize" :class="step.current ? 'font-semibold' : ''">{{ step.status }}</span>
                 </li>
             </ol>
+
+            <div v-if="canReview" class="mt-6 rounded-xl bg-white p-4 shadow-sm">
+                <h2 class="mb-2 font-semibold">Rate your order</h2>
+                <div class="flex gap-1 text-2xl">
+                    <button
+                        v-for="star in 5"
+                        :key="star"
+                        type="button"
+                        :class="star <= reviewForm.rating ? 'text-orange-500' : 'text-neutral-300'"
+                        @click="reviewForm.rating = star"
+                    >
+                        ★
+                    </button>
+                </div>
+                <textarea v-model="reviewForm.text" placeholder="Tell us more (optional)" rows="2" class="mt-2 w-full rounded-md border p-2"></textarea>
+                <button class="mt-2 w-full rounded-lg bg-orange-500 py-2 text-white" :disabled="reviewForm.processing" @click="submitReview">
+                    Submit review
+                </button>
+            </div>
 
             <div class="mt-6 rounded-xl bg-white p-4 shadow-sm">
                 <div v-for="item in order.items" :key="item.id" class="flex justify-between py-1 text-sm">

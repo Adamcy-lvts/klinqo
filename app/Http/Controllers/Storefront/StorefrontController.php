@@ -54,6 +54,19 @@ class StorefrontController extends Controller
                 ]),
             ],
             'categories' => $categories,
+            'reviews' => $kitchen->reviews()
+                ->visible()
+                ->with('user:id,name')
+                ->latest()
+                ->limit(10)
+                ->get()
+                ->map(fn ($review) => [
+                    'id' => $review->id,
+                    'rating' => $review->rating,
+                    'text' => $review->text,
+                    'customer_name' => $review->user->name,
+                    'created_at' => $review->created_at,
+                ]),
         ]);
     }
 }

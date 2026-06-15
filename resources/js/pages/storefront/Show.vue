@@ -34,7 +34,14 @@ interface Kitchen {
     cuisines: Array<{ id: string; name: string; emoji: string | null }>;
 }
 
-const props = defineProps<{ kitchen: Kitchen; categories: Category[] }>();
+interface Review {
+    id: string;
+    rating: number;
+    text: string | null;
+    customer_name: string;
+}
+
+const props = defineProps<{ kitchen: Kitchen; categories: Category[]; reviews: Review[] }>();
 
 const cartKey = `klinqo:cart:${props.kitchen.id}`;
 const cart = ref<Record<string, { id: string; name: string; price: number; qty: number }>>({});
@@ -130,6 +137,18 @@ const checkout = () => router.visit(`/s/${props.kitchen.business_code}/checkout`
                                 </button>
                             </div>
                         </div>
+                    </div>
+                </div>
+            </div>
+            <div v-if="reviews.length" class="mt-8">
+                <h2 class="mb-2 font-semibold">Reviews</h2>
+                <div class="space-y-3">
+                    <div v-for="review in reviews" :key="review.id" class="rounded-xl bg-white p-3 shadow-sm">
+                        <div class="flex items-center justify-between">
+                            <span class="font-medium">{{ review.customer_name }}</span>
+                            <span class="text-sm text-orange-500">{{ '★'.repeat(review.rating) }}</span>
+                        </div>
+                        <p v-if="review.text" class="mt-1 text-sm text-neutral-600">{{ review.text }}</p>
                     </div>
                 </div>
             </div>
