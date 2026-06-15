@@ -6,8 +6,10 @@ use App\Http\Controllers\Api\Auth\PasswordResetController;
 use App\Http\Controllers\Api\Auth\RegisterController;
 use App\Http\Controllers\Api\Auth\SessionController;
 use App\Http\Controllers\Api\CuisineController;
+use App\Http\Controllers\Api\DeviceController;
 use App\Http\Controllers\Api\KitchenController;
 use App\Http\Controllers\Api\MenuItemController;
+use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\PaystackWebhookController;
@@ -69,4 +71,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('payments/{reference}/verify', [PaymentController::class, 'verify']);
 
     Route::apiResource('addresses', AddressController::class)->except('show');
+
+    Route::post('devices', [DeviceController::class, 'store']);
+    Route::delete('devices', [DeviceController::class, 'destroy']);
+
+    Route::get('notifications', [NotificationController::class, 'index']);
+    Route::post('notifications/read', [NotificationController::class, 'readAll']);
+    Route::post('notifications/{notification}/read', [NotificationController::class, 'read']);
 });

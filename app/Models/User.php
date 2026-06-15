@@ -120,4 +120,12 @@ class User extends Authenticatable implements PasskeyUser
     {
         return $this->hasMany(Notification::class);
     }
+
+    /**
+     * @return HasMany<DeviceToken, $this>
+     */
+    public function deviceTokens(): HasMany
+    {
+        return $this->hasMany(DeviceToken::class);
+    }
 }

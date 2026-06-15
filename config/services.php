@@ -48,4 +48,9 @@ return [
         'base_url' => env('PAYSTACK_BASE_URL', 'https://api.paystack.co'),
     ],
 
+    'fcm' => [
+        'key' => env('FCM_SERVER_KEY'),
+        'url' => env('FCM_URL', 'https://fcm.googleapis.com/fcm/send'),
+    ],
+
 ];
