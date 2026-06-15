@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Order;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use RuntimeException;
 
@@ -87,6 +88,60 @@ class PaystackService
         $expected = hash_hmac('sha512', $payload, (string) config('services.paystack.secret'));
 
         return hash_equals($expected, $signature);
+    }
+
+    /**
+     * Create a Paystack subaccount for a kitchen's payouts. The platform's
+     * commission is retained via percentage_charge. Returns the subaccount
+     * code, or null when Paystack isn't configured (local dev).
+     */
+    public function createSubaccount(string $businessName, string $bankCode, string $accountNumber, float $percentageCharge): ?string
+    {
+        $key = config('services.paystack.secret');
+
+        if (empty($key)) {
+            Log::info('Paystack disabled; subaccount not created.', ['business' => $businessName]);
+
+            return null;
+        }
+
+        $response = Http::withToken((string) $key)
+            ->acceptJson()
+            ->post($this->url('/subaccount'), [
+                'business_name' => $businessName,
+                'settlement_bank' => $bankCode,
+                'account_number' => $accountNumber,
+                'percentage_charge' => $percentageCharge,
+            ]);
+
+        if ($response->failed()) {
+            throw new RuntimeException('Unable to create Paystack subaccount.');
+        }
+
+        return $response->json('data.subaccount_code');
+    }
+
+    /**
+     * Resolve a bank account name, or null when unavailable / not configured.
+     *
+     * @return array<string, mixed>|null
+     */
+    public function resolveAccount(string $accountNumber, string $bankCode): ?array
+    {
+        $key = config('services.paystack.secret');
+
+        if (empty($key)) {
+            return null;
+        }
+
+        $response = Http::withToken((string) $key)
+            ->acceptJson()
+            ->get($this->url('/bank/resolve'), [
+                'account_number' => $accountNumber,
+                'bank_code' => $bankCode,
+            ]);
+
+        return $response->successful() ? (array) $response->json('data') : null;
     }
 
     private function reference(Order $order): string

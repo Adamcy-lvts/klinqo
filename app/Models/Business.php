@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Str;
 
 /**
  * @property string $id
@@ -86,6 +87,18 @@ class Business extends Model
     public function scopeActive(Builder $query): void
     {
         $query->where('status', 'active');
+    }
+
+    /**
+     * Generate a unique, human-friendly public business code (e.g. MIRA7K).
+     */
+    public static function generateBusinessCode(): string
+    {
+        do {
+            $code = Str::upper(Str::random(6));
+        } while (static::query()->where('business_code', $code)->exists());
+
+        return $code;
     }
 
     /**
