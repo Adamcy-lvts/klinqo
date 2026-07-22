@@ -14,6 +14,12 @@ createInertiaApp({
         switch (true) {
             case name === 'Welcome':
                 return null;
+            case name === 'platform/Console':
+                return null;
+            case name === 'admin/KitchenConsole':
+                return null;
+            case name === 'platform/Login':
+                return null;
             case name.startsWith('storefront/'):
                 return null;
             case name.startsWith('onboarding/'):

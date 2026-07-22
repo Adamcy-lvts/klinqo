@@ -1,0 +1,182 @@
+/* savora.css — Savora Operations Console design tokens + globals
+   Ported verbatim from the "Savora Admin" design bundle.
+   Variables are scoped to .sav-root so they don't leak into the rest of the app.
+   Loaded globally via resources/css/app.css; fonts come from a <link> in the
+   document head (app.blade.php) so there's no flash of unstyled content. */
+
+.sav-root {
+  --sav-primary: #FF6B35;
+  --sav-primary-dark: #E55A29;
+  --sav-primary-soft: rgba(255, 107, 53, 0.12);
+  --sav-primary-tint: rgba(255, 107, 53, 0.06);
+
+  --sav-bg: #FFF7F2;
+  --sav-surface: #FFFFFF;
+  --sav-surface-2: #FBF1E9;
+
+  --sav-ink: #1F1410;
+  --sav-ink-2: #5A4438;
+  --sav-ink-3: #9C8578;
+  --sav-ink-4: #C8B5A8;
+
+  --sav-border: #F0DFCF;
+  --sav-border-strong: #E5CFB9;
+
+  --sav-success: #1F8A5B;
+  --sav-success-soft: rgba(31, 138, 91, 0.12);
+  --sav-warn: #E0A100;
+  --sav-warn-soft: rgba(224, 161, 0, 0.14);
+  --sav-danger: #D64545;
+  --sav-danger-soft: rgba(214, 69, 69, 0.10);
+
+  --sav-radius-sm: 10px;
+  --sav-radius: 16px;
+  --sav-radius-lg: 22px;
+  --sav-radius-xl: 28px;
+
+  --sav-shadow-sm: 0 1px 2px rgba(31, 20, 16, 0.06);
+  --sav-shadow: 0 8px 24px rgba(31, 20, 16, 0.08);
+  --sav-shadow-lg: 0 24px 60px rgba(31, 20, 16, 0.18);
+
+  --sav-display: 'Bricolage Grotesque', ui-sans-serif, system-ui, sans-serif;
+  --sav-text: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+
+  min-height: 100vh;
+  background: var(--sav-bg);
+  color: var(--sav-ink);
+  font-family: var(--sav-text);
+  -webkit-font-smoothing: antialiased;
+}
+
+.sav-root *,
+.sav-root *::before,
+.sav-root *::after { box-sizing: border-box; }
+
+.sav-root button { font-family: inherit; cursor: pointer; border: none; background: none; padding: 0; color: inherit; }
+.sav-root input, .sav-root textarea { font-family: inherit; font-size: inherit; color: inherit; }
+.sav-root table { font-family: var(--sav-text); }
+
+/* scrollbars */
+.sav-root *::-webkit-scrollbar { width: 10px; height: 10px; }
+.sav-root *::-webkit-scrollbar-thumb { background: var(--sav-border-strong); border-radius: 999px; border: 3px solid var(--sav-bg); }
+.sav-root *::-webkit-scrollbar-track { background: transparent; }
+
+/* page entrance — content is ALWAYS visible; only a subtle slide as enhancement */
+.sav-page-enter { opacity: 1; }
+@keyframes sav-page-up { from { transform: translateY(10px); } to { transform: translateY(0); } }
+@media (prefers-reduced-motion: no-preference) {
+  .sav-page-enter { animation: sav-page-up 320ms cubic-bezier(0.16,1,0.3,1) both; }
+}
+
+@keyframes sav-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+/* toast / dialog entrance (kitchen console live feed) */
+@keyframes sav-fade-up { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+/* compact density */
+.sav-compact .sav-kpi-grid, .sav-compact .sav-stat-strip { gap: 12px; }
+.sav-compact .sav-grid-2-1, .sav-compact .sav-grid-3, .sav-compact .sav-kitchen-grid { gap: 14px; }
+
+/* ── Responsive grid utilities ───────────────────────── */
+.sav-kpi-grid { display: grid; gap: 16px; grid-template-columns: repeat(4, 1fr); }
+.sav-grid-2-1 { display: grid; gap: 20px; grid-template-columns: 1.9fr 1fr; align-items: stretch; }
+.sav-grid-3 { display: grid; gap: 20px; grid-template-columns: 1.2fr 1fr 1fr; align-items: start; }
+.sav-stat-strip { display: grid; gap: 16px; grid-template-columns: repeat(4, 1fr); }
+.sav-kitchen-grid { display: grid; gap: 18px; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
+.sav-top-kitchens { display: grid; gap: 0 32px; grid-template-columns: 1fr 1fr; }
+
+.sav-mobile-only { display: none; }
+.sav-desktop-only { display: flex; }
+
+/* ── Breakpoints ─────────────────────────────────────── */
+@media (max-width: 1180px) {
+  .sav-grid-3 { grid-template-columns: 1fr 1fr; }
+  .sav-grid-3 > *:first-child { grid-column: 1 / -1; }
+}
+@media (max-width: 1024px) {
+  .sav-grid-2-1 { grid-template-columns: 1fr; }
+  .sav-top-kitchens { grid-template-columns: 1fr; }
+  .sav-hide-md { display: none !important; }
+}
+@media (max-width: 860px) {
+  .sav-kpi-grid { grid-template-columns: repeat(2, 1fr); }
+  .sav-stat-strip { grid-template-columns: repeat(2, 1fr); }
+  .sav-grid-3 { grid-template-columns: 1fr; }
+  .sav-sidebar {
+    position: fixed !important; left: 0; top: 0;
+    transform: translateX(-100%); transition: transform 240ms ease !important;
+    width: 248px !important;
+  }
+  .sav-sidebar.open { transform: translateX(0); }
+  .sav-mobile-only { display: flex; }
+  .sav-desktop-only { display: none !important; }
+}
+@media (max-width: 560px) {
+  .sav-hide-sm { display: none !important; }
+  .sav-main { padding: 16px 14px 40px !important; }
+  .sav-topbar { padding: 14px 16px !important; }
+}
+
+/* ── Platform sign-in page ───────────────────────────── */
+.sav-login {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 24px;
+  position: relative;
+  overflow: hidden;
+}
+.sav-login-bg {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(1200px 600px at 80% -10%, rgba(255, 107, 53, 0.18), transparent 60%),
+    linear-gradient(160deg, #2a1b12 0%, #1a110b 100%);
+}
+.sav-login-card {
+  position: relative;
+  width: 100%;
+  max-width: 400px;
+  background: var(--sav-surface);
+  border: 1px solid var(--sav-border);
+  border-radius: var(--sav-radius-lg);
+  box-shadow: var(--sav-shadow-lg);
+  padding: 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.sav-login-brand { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; }
+.sav-login-name {
+  font-family: var(--sav-display);
+  font-weight: 800; font-size: 22px; letter-spacing: -0.03em; color: var(--sav-ink); line-height: 1;
+}
+.sav-login-kicker {
+  font-size: 10.5px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--sav-primary-dark); margin-top: 3px;
+}
+.sav-login-title {
+  font-family: var(--sav-display);
+  font-weight: 700; font-size: 22px; letter-spacing: -0.02em; color: var(--sav-ink); margin: 0;
+}
+.sav-login-sub { font-size: 13.5px; color: var(--sav-ink-3); margin: 2px 0 18px; }
+.sav-field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 4px; }
+.sav-field span { font-size: 12.5px; font-weight: 600; color: var(--sav-ink-2); }
+.sav-field input {
+  height: 44px; border: 1.5px solid var(--sav-border); border-radius: 12px; padding: 0 14px;
+  font-size: 14px; background: var(--sav-surface); color: var(--sav-ink); outline: none;
+  transition: border-color 120ms ease, box-shadow 120ms ease;
+}
+.sav-field input:focus { border-color: var(--sav-primary); box-shadow: 0 0 0 4px var(--sav-primary-soft); }
+.sav-error { font-size: 12.5px; color: var(--sav-danger); margin: 2px 0 6px; }
+.sav-remember {
+  display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--sav-ink-2); margin: 8px 0 18px;
+}
+.sav-remember input { width: 16px; height: 16px; accent-color: var(--sav-primary); }
+.sav-login-btn {
+  height: 46px; border-radius: 12px; background: var(--sav-primary); color: #fff;
+  font-weight: 700; font-size: 14.5px; box-shadow: 0 4px 12px rgba(255, 107, 53, 0.28);
+  transition: filter 120ms ease;
+}
+.sav-login-btn:hover { filter: brightness(1.05); }
+.sav-login-btn:disabled { opacity: 0.6; cursor: default; }

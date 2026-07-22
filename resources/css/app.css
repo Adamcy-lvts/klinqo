@@ -2,6 +2,10 @@
 
 @import 'tw-animate-css';
 
+/* Savora Operations Console (/platform) — global so it's in the linked
+   stylesheet and never flashes unstyled on refresh. Scoped to .sav-root. */
+@import './savora.css';
+
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
 

@@ -31,6 +31,14 @@ return Application::configure(basePath: dirname(__DIR__))
             'kitchen' => EnsureKitchenOperator::class,
             'admin' => EnsureAdmin::class,
         ]);
+
+        // Unauthenticated visitors to the platform area get the platform-admin
+        // login; everyone else gets the standard (kitchen) login.
+        $middleware->redirectGuestsTo(
+            fn (Request $request) => $request->is('platform', 'platform/*')
+                ? route('platform.login')
+                : route('login'),
+        );
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(
