@@ -1,0 +1,101 @@
+name: deploy
+
+# Zero-downtime deploy for the Forge-provisioned server.
+# Runs after the `tests` workflow succeeds on main. Builds a fresh release
+# under releases/, then atomically repoints the `current` symlink.
+# Can also be triggered manually from the Actions tab.
+on:
+  workflow_run:
+    workflows: ['tests']
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.head_branch == 'main')
+
+    steps:
+      - name: Deploy over SSH
+        uses: appleboy/ssh-action@v1
+        env:
+          GH_PAT: ${{ secrets.GH_PAT }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          port: 22
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          passphrase: ${{ secrets.SSH_PASSPHRASE }}
+          envs: GH_PAT,DEPLOY_PATH
+          command_timeout: 30m
+          script: |
+            set -euo pipefail
+
+            BASE="${DEPLOY_PATH%/}"
+            CURRENT="$BASE/current"
+            REPO="https://oauth2:${GH_PAT}@github.com/Adamcy-lvts/klinqo.git"
+
+            # Refuse to run unless this is the expected Forge zero-downtime layout.
+            if [ ! -L "$CURRENT" ]; then
+              echo "ERROR: $CURRENT is not a symlink — expected an atomic releases/current layout." >&2
+              exit 1
+            fi
+
+            PREV="$(readlink -f "$CURRENT")"
+            RELEASE="$BASE/releases/$(date +%Y%m%d%H%M%S)"
+
+            echo "→ Creating release from $PREV"
+            cp -a "$PREV" "$RELEASE"
+            cd "$RELEASE"
+
+            echo "→ Fetching latest main"
+            git fetch --prune "$REPO" main
+            git reset --hard FETCH_HEAD
+
+            echo "→ Linking shared files"
+            ln -sfn "$BASE/.env" "$RELEASE/.env"
+            [ -e "$BASE/auth.json" ] && ln -sfn "$BASE/auth.json" "$RELEASE/auth.json"
+            rm -rf "$RELEASE/storage"
+            ln -sfn "$BASE/storage" "$RELEASE/storage"
+
+            echo "→ Installing PHP dependencies"
+            composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader
+
+            echo "→ Building frontend assets"
+            npm ci
+            npm run build
+
+            echo "→ Running migrations"
+            php artisan migrate --force
+
+            echo "→ Rebuilding caches"
+            php artisan optimize
+            php artisan storage:link || true
+
+            echo "→ Activating new release"
+            ln -sfn "$RELEASE" "$CURRENT"
+
+            echo "→ Restarting workers"
+            php artisan queue:restart
+            php artisan reverb:restart || true
+
+            # Atomic deploys change the resolved file paths, so OPcache serves the
+            # new code without a reload. If realpath_cache_ttl briefly serves stale
+            # code, uncomment (Forge grants passwordless sudo for this). Match the
+            # server's PHP version.
+            # sudo -S service php8.4-fpm reload
+
+            echo "→ Pruning old releases (keeping 5)"
+            cd "$BASE/releases"
+            ls -1dt */ | tail -n +6 | xargs -r rm -rf
+
+            echo "✓ Deployed $RELEASE"
