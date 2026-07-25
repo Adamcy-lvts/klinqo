@@ -8,8 +8,10 @@ use App\Models\Order;
 use App\Models\PlatformSetting;
 use App\Models\Review;
 use App\Models\User;
+use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -64,7 +66,7 @@ class ConsoleData
         $yestB = $bucket(today()->subDay());
 
         // Per-kitchen order aggregates.
-        $ordAgg = Order::query()
+        $ordAgg = Order::query()->toBase()
             ->selectRaw('business_id, count(*) c, sum(total) gmv, sum(commission_amount) comm')
             ->groupBy('business_id')->get()->keyBy('business_id');
 
@@ -103,11 +105,11 @@ class ConsoleData
     }
 
     /**
-     * @param  \Illuminate\Support\Collection<int|string, mixed>  $dayRows
-     * @param  \Illuminate\Support\Collection<int, Carbon>  $days
+     * @param  Collection<int|string, mixed>  $dayRows
+     * @param  Collection<int, CarbonImmutable>  $days
      * @param  array<string, mixed>  $todayB
      * @param  array<string, mixed>  $yestB
-     * @param  \Illuminate\Support\Collection<int, Business>  $businesses
+     * @param  Collection<int, Business>  $businesses
      * @return array<int, array<string, mixed>>
      */
     private function kpis($dayRows, $days, array $todayB, array $yestB, $businesses): array
@@ -212,14 +214,14 @@ class ConsoleData
     }
 
     /**
-     * @param  \Illuminate\Support\Collection<int|string, mixed>  $ordAgg
+     * @param  Collection<int|string, \stdClass>  $ordAgg
      * @return array<string, mixed>
      */
     private function kitchenRow(Business $b, $ordAgg, callable $colorOf): array
     {
-        $agg = $ordAgg->get($b->id);
-        $gmv = (float) ($agg?->gmv ?? 0);
-        $comm = (float) ($agg?->comm ?? 0);
+        $agg = (array) ($ordAgg->get($b->id) ?? []);
+        $gmv = (float) ($agg['gmv'] ?? 0);
+        $comm = (float) ($agg['comm'] ?? 0);
         $statusMap = ['active' => 'active', 'pending' => 'pending', 'suspended' => 'paused'];
 
         return [
@@ -230,7 +232,7 @@ class ConsoleData
             'initial' => mb_strtoupper(mb_substr($b->name, 0, 1)),
             'color' => $colorOf($b->id),
             'rating' => (float) $b->rating,
-            'orders' => (int) ($agg?->c ?? 0),
+            'orders' => (int) ($agg['c'] ?? 0),
             'gmv' => $this->compact($gmv),
             'gmvRaw' => round($gmv / 1_000_000, 2),
             'status' => $statusMap[$b->status] ?? 'pending',
@@ -257,15 +259,15 @@ class ConsoleData
             ->orderByDesc('placed_at')->limit(12)->get()
             ->map(fn (Order $o) => [
                 'id' => $o->order_number,
-                'kitchen' => $o->business?->name ?? '—',
+                'kitchen' => $o->business->name ?? '—',
                 'code' => $o->business_id,
-                'customer' => $o->user?->name ?? '—',
+                'customer' => $o->user->name ?? '—',
                 'items' => (int) $o->items_count,
                 'total' => $this->money((float) $o->total),
                 'totalRaw' => (float) $o->total,
                 'status' => $statusMap[$o->status] ?? 'preparing',
                 'pay' => $payMap[$o->payment_method] ?? 'Card',
-                'area' => $o->business?->area ?? '—',
+                'area' => $o->business->area ?? '—',
                 'time' => $o->placed_at?->diffForHumans() ?? '—',
                 'agent' => '—',
             ])->all();
@@ -276,7 +278,7 @@ class ConsoleData
      */
     private function customers(): array
     {
-        $agg = Order::query()
+        $agg = Order::query()->toBase()
             ->selectRaw('user_id, count(*) c, sum(total) s, max(placed_at) last')
             ->groupBy('user_id')->get()->keyBy('user_id')
             ->sortByDesc('s')->take(8);
@@ -290,7 +292,7 @@ class ConsoleData
         // Latest order area per top customer (small N).
         $areas = Order::query()->whereIn('user_id', $agg->keys())
             ->with('business:id,area')->orderByDesc('placed_at')->get()
-            ->groupBy('user_id')->map(fn ($g) => $g->first()->business?->area ?? '—');
+            ->groupBy('user_id')->map(fn ($g) => $g->first()->business->area ?? '—');
 
         return $agg->map(function ($a, string $uid) use ($users, $areas) {
             $u = $users->get($uid);
@@ -317,22 +319,22 @@ class ConsoleData
     }
 
     /**
-     * @param  \Illuminate\Support\Collection<int, Business>  $businesses
-     * @param  \Illuminate\Support\Collection<int|string, mixed>  $ordAgg
-     * @param  \Illuminate\Support\Collection<int|string, mixed>  $ledgerAgg
+     * @param  Collection<int, Business>  $businesses
+     * @param  Collection<int|string, \stdClass>  $ordAgg
+     * @param  Collection<int|string, mixed>  $ledgerAgg
      * @return array<int, array<string, mixed>>
      */
     private function payouts($businesses, $ordAgg, $ledgerAgg): array
     {
         $rows = [];
         $i = 1042;
-        foreach ($businesses->sortByDesc(fn (Business $b) => (float) ($ordAgg->get($b->id)?->gmv ?? 0)) as $b) {
-            $agg = $ordAgg->get($b->id);
-            $gross = (float) ($agg?->gmv ?? 0);
+        foreach ($businesses->sortByDesc(fn (Business $b) => (float) (((array) ($ordAgg->get($b->id) ?? []))['gmv'] ?? 0)) as $b) {
+            $agg = (array) ($ordAgg->get($b->id) ?? []);
+            $gross = (float) ($agg['gmv'] ?? 0);
             if ($gross <= 0) {
                 continue;
             }
-            $comm = (float) ($agg?->comm ?? 0);
+            $comm = (float) ($agg['comm'] ?? 0);
             $ledger = $ledgerAgg->get($b->id);
             $status = ($ledger && (int) $ledger->pend > 0) ? 'pending' : (($ledger && (int) $ledger->settled > 0) ? 'paid' : 'pending');
 
@@ -364,7 +366,7 @@ class ConsoleData
         }
 
         foreach (Review::query()->visible()->with('business:id,name')->latest()->limit(2)->get() as $r) {
-            $out[] = ['id' => 'r'.$r->id, 'icon' => 'star', 'tone' => 'good', 'text' => ($r->business?->name ?? 'A kitchen')." received a {$r->rating}★ review", 'time' => $r->created_at?->diffForHumans() ?? ''];
+            $out[] = ['id' => 'r'.$r->id, 'icon' => 'star', 'tone' => 'good', 'text' => ($r->business->name ?? 'A kitchen')." received a {$r->rating}★ review", 'time' => $r->created_at?->diffForHumans() ?? ''];
         }
 
         $newToday = User::where('role', 'customer')->whereDate('created_at', today())->count();
@@ -412,7 +414,10 @@ class ConsoleData
         $totalCustomers = User::where('role', 'customer')->count();
         $repeat = User::where('role', 'customer')->has('orders', '>', 1)->count();
         $withOrders = User::where('role', 'customer')->has('orders')->count();
-        $vip = Order::query()->selectRaw('user_id, sum(total) s')->groupBy('user_id')->havingRaw('sum(total) >= 200000')->get()->count();
+        $vip = DB::query()->fromSub(
+            Order::query()->selectRaw('user_id')->groupBy('user_id')->havingRaw('sum(total) >= 200000'),
+            'vip'
+        )->count();
 
         return [
             'orders_today' => number_format((int) $todayB['c']),
